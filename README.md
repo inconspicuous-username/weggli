@@ -1,4 +1,5 @@
 # weggli
+This is a fork of https://github.com/googleprojectzero/weggli with the intention to stay as up to date as possible. The main added functionality is a docker file with the toolchain to easily compile the binary for different architectures and different operating systems
 
 ![weggli example](example.gif)
 
