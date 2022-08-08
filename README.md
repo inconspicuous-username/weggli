@@ -1,5 +1,7 @@
 # weggli
-This is a fork of https://github.com/googleprojectzero/weggli with the intention to stay as up to date as possible. The main added functionality is a docker file with the toolchain to easily compile the binary for different architectures and different operating systems
+This is a fork of https://github.com/googleprojectzero/weggli with the intention to stay as up to date as possible. The main added functionality is a docker file with the toolchain to easily compile the binary for different architectures and different operating systems.
+
+Next to that this project will, on a best effort basis, add compiled binaries to the repo, for ease of use. (see the releases section)
 
 From the root directory of this repo do:
 1. Build the docker image:
