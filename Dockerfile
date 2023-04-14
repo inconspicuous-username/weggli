@@ -1,7 +1,7 @@
 # Taken from https://www.docker.com/blog/cross-compiling-rust-code-for-multiple-architectures/
 # build image: docker build -t wegglibuilder .
 # start compilation: docker run --rm -it -v ${PWD}:/app wegglibuilder
-FROM rust:1.60
+FROM rust:latest
  
 RUN apt update; apt upgrade -y 
 RUN apt install -y g++-mingw-w64-x86-64 
