@@ -32,6 +32,7 @@ pub struct Args {
     pub force_query: bool,
     pub include: Vec<String>,
     pub exclude: Vec<String>,
+    pub enable_line_numbers: bool
 }
 
 /// Parse command arguments and return them inside the Args structure.
@@ -158,6 +159,13 @@ pub fn parse_arguments() -> Args {
                 .multiple(true)
                 .help("Only search files that match the given regex."),
         )
+        .arg(
+            Arg::with_name("line-numbers")
+                .long("line-numbers")
+                .short("n")
+                .takes_value(false)
+                .help("Enable line numbers"),
+        )
         .get_matches();
 
     let helper = |option_name| -> Vec<String> {
@@ -232,6 +240,8 @@ pub fn parse_arguments() -> Args {
 
     let force_query = matches.occurrences_of("force") > 0;
 
+    let enable_line_numbers = matches.occurrences_of("line-numbers") > 0;
+
     Args {
         path,
         pattern,
@@ -246,6 +256,7 @@ pub fn parse_arguments() -> Args {
         force_query,
         include,
         exclude,
+        enable_line_numbers
     }
 }
 
@@ -320,7 +331,7 @@ strict:   Enable stricter matching. This turns off statement unwrapping and gree
  Input directory or file to search. By default, weggli will search inside 
  .c and .h files for the default C mode or .cc, .cpp, .cxx, .h and .hpp files when
  executing in C++ mode (using the --cpp option).
- Alternative file endings can be specified using the --extensions (-e) option.
+ Alternative file endings can be specified using the --extensions=h,c (-e) option.
  
  When combining weggli with other tools or preprocessing steps, 
  files can also be specified via STDIN by setting the directory to '-' 

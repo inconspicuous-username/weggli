@@ -25,11 +25,13 @@ use colored::Colorize;
 use rayon::iter::ParallelBridge;
 use rayon::prelude::*;
 use regex::Regex;
+use std::cell::RefCell;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Arc};
 use std::{collections::HashMap, path::Path};
 use std::{collections::HashSet, fs};
 use std::{io::prelude::*, path::PathBuf};
+use thread_local::ThreadLocal;
 use tree_sitter::Tree;
 use walkdir::WalkDir;
 use weggli::RegexMap;
@@ -175,6 +177,7 @@ fn main() {
         let w = &work;
         let before = args.before;
         let after = args.after;
+        let enable_line_numbers = args.enable_line_numbers;
 
         // Spawn worker to iterate through files, parse potential matches and forward ASTs
         s.spawn(move |_| parse_files_worker(files, ast_tx, w, cpp));
@@ -186,7 +189,7 @@ fn main() {
         s.spawn(move |_| execute_queries_worker(ast_rx, results_tx, w, &args));
 
         if w.len() > 1 {
-            s.spawn(move |_| multi_query_worker(results_rx, w.len(), before, after));
+            s.spawn(move |_| multi_query_worker(results_rx, w.len(), before, after, enable_line_numbers));
         }
     });
 }
@@ -275,6 +278,8 @@ fn parse_files_worker(
     work: &[WorkItem],
     is_cpp: bool,
 ) {
+    let tl = ThreadLocal::new();
+
     files
         .into_par_iter()
         .for_each_with(sender, move |sender, path| {
@@ -293,7 +298,11 @@ fn parse_files_worker(
                 if !potential_match {
                     None
                 } else {
-                    Some((weggli::parse(&source, is_cpp), source.to_string()))
+                    let mut parser = tl
+                        .get_or(|| RefCell::new(weggli::get_parser(is_cpp)))
+                        .borrow_mut();
+                    let tree = parser.parse(&source.as_bytes(), None).unwrap();
+                    Some((tree, source.to_string()))
                 }
             };
             if let Some((source_tree, source)) = maybe_parse(&path) {
@@ -372,7 +381,7 @@ fn execute_queries_worker(
                                 "{}:{}\n{}",
                                 path.clone().bold(),
                                 line,
-                                m.display(&source, args.before, args.after)
+                                m.display(&source, args.before, args.after, args.enable_line_numbers)
                             );
                         } else {
                             results_tx
@@ -403,6 +412,7 @@ fn multi_query_worker(
     num_queries: usize,
     before: usize,
     after: usize,
+    enable_line_numbers: bool
 ) {
     let mut query_results = Vec::with_capacity(num_queries);
     for _ in 0..num_queries {
@@ -443,7 +453,7 @@ fn multi_query_worker(
                 "{}:{}\n{}",
                 r.path.bold(),
                 line,
-                r.result.display(&r.source, before, after)
+                r.result.display(&r.source, before, after, enable_line_numbers)
             );
         })
     });
